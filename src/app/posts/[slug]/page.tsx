@@ -43,10 +43,10 @@ export default async function PostDetail({
   }
 
   return (
-    <main className="min-h-screen bg-stone-50 text-stone-950">
+    <main className="bg-stone-50 text-stone-950">
       <header className="sticky top-0 z-30 border-b border-stone-200 bg-white/90 backdrop-blur">
-        <nav className="mx-auto flex max-w-5xl items-center justify-between px-5 py-4">
-          <Link href="/" className="text-lg font-semibold">
+        <nav className="mx-auto flex max-w-5xl flex-wrap items-center justify-between gap-3 px-4 py-3 sm:px-5 sm:py-4">
+          <Link href="/" className="text-base font-semibold sm:text-lg">
             RuangTulis
           </Link>
           <div className="flex items-center gap-2">
@@ -66,23 +66,23 @@ export default async function PostDetail({
         </nav>
       </header>
 
-      <article className="mx-auto max-w-5xl px-5 py-10">
+      <article className="mx-auto max-w-5xl px-4 py-8 sm:px-5 sm:py-10">
         <Link href="/" className="text-sm font-semibold text-emerald-700">
           Kembali ke beranda
         </Link>
 
-        <header className="mt-8 max-w-3xl">
-          <div className="flex flex-wrap items-center gap-3 text-sm text-stone-500">
+        <header className="mt-6 max-w-3xl sm:mt-8">
+          <div className="flex flex-wrap items-center gap-2 text-sm text-stone-500 sm:gap-3">
             <span className="rounded-[8px] bg-emerald-50 px-3 py-1 font-medium text-emerald-800">
               {post.category}
             </span>
             <span>{post.publishedAt}</span>
             <span>{post.readTime}</span>
           </div>
-          <h1 className="mt-5 text-4xl font-semibold leading-tight sm:text-6xl">
+          <h1 className="mt-5 text-3xl font-semibold leading-tight sm:text-5xl lg:text-6xl">
             {post.title}
           </h1>
-          <p className="mt-5 text-lg leading-8 text-stone-600">
+          <p className="mt-4 text-base leading-7 text-stone-600 sm:mt-5 sm:text-lg sm:leading-8">
             {post.excerpt}
           </p>
           <div className="mt-6 flex items-center gap-3 border-t border-stone-200 pt-5 text-sm text-stone-500">
@@ -96,7 +96,7 @@ export default async function PostDetail({
           </div>
         </header>
 
-        <div className="relative mt-10 aspect-[16/8] min-h-[260px] overflow-hidden rounded-[8px] bg-stone-200">
+        <div className="relative mt-8 aspect-[4/3] overflow-hidden rounded-[8px] bg-stone-200 sm:mt-10 sm:aspect-[16/9] lg:aspect-[16/8]">
           <Image
             src={post.cover}
             alt=""
@@ -107,7 +107,7 @@ export default async function PostDetail({
           />
         </div>
 
-        <div className="mt-10 grid gap-8 lg:grid-cols-[minmax(0,680px)_1fr]">
+        <div className="mt-8 grid min-w-0 gap-8 sm:mt-10 lg:grid-cols-[minmax(0,680px)_1fr]">
           <div className="prose-blog">
             {post.content.map((paragraph) => (
               <p key={paragraph}>{paragraph}</p>
@@ -118,17 +118,17 @@ export default async function PostDetail({
               Ringkasan artikel
             </h2>
             <dl className="mt-4 space-y-3 text-sm">
-              <div className="flex justify-between gap-4">
+              <div className="flex flex-wrap justify-between gap-2">
                 <dt className="text-stone-500">Kategori</dt>
-                <dd className="font-medium">{post.category}</dd>
+                <dd className="font-medium break-words text-right">{post.category}</dd>
               </div>
-              <div className="flex justify-between gap-4">
+              <div className="flex flex-wrap justify-between gap-2">
                 <dt className="text-stone-500">Waktu baca</dt>
-                <dd className="font-medium">{post.readTime}</dd>
+                <dd className="font-medium break-words text-right">{post.readTime}</dd>
               </div>
-              <div className="flex justify-between gap-4">
+              <div className="flex flex-wrap justify-between gap-2">
                 <dt className="text-stone-500">Tanggal</dt>
-                <dd className="font-medium">{post.publishedAt}</dd>
+                <dd className="font-medium break-words text-right">{post.publishedAt}</dd>
               </div>
             </dl>
           </aside>

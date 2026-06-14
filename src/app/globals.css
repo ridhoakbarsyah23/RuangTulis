@@ -43,9 +43,10 @@ textarea {
 
 .prose-blog {
   color: #44403c;
-  font-size: 1.125rem;
-  line-height: 1.9;
+  font-size: clamp(1rem, 0.95rem + 0.25vw, 1.125rem);
+  line-height: 1.85;
   max-width: 68ch;
+  overflow-wrap: anywhere;
 }
 
 .prose-blog p + p {
