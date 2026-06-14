@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { createPostAction } from "@/app/dashboard/actions";
+import { ArticleActions } from "@/app/dashboard/article-actions";
 import { LogoutButton } from "@/app/dashboard/logout-button";
 import { getPosts } from "@/lib/post-store";
 
@@ -11,7 +12,12 @@ const tasks = [
 
 export const dynamic = "force-dynamic";
 
-export default async function Dashboard() {
+export default async function Dashboard({
+  searchParams,
+}: {
+  searchParams: Promise<{ error?: string; success?: string }>;
+}) {
+  const params = await searchParams;
   const posts = await getPosts();
   const publishedPosts = posts.filter((post) => post.status === "PUBLISHED");
   const draftPosts = posts.filter((post) => post.status === "DRAFT");
@@ -61,6 +67,8 @@ export default async function Dashboard() {
           <Metric label="Total Posts" value={String(posts.length)} />
         </div>
 
+        <DashboardAlert error={params.error} success={params.success} />
+
         <div className="mt-6 grid gap-6 lg:grid-cols-[minmax(0,1fr)_340px]">
           <section className="rounded-[8px] bg-white p-5 shadow-sm ring-1 ring-stone-200">
             <div className="mb-4 flex items-center justify-between gap-4">
@@ -75,33 +83,56 @@ export default async function Dashboard() {
               </span>
             </div>
 
-            <div className="overflow-hidden rounded-[8px] border border-stone-200">
-              {posts.map((post) => (
-                <div
-                  key={post.slug}
-                  className="grid gap-3 border-b border-stone-200 p-4 last:border-b-0 md:grid-cols-[minmax(0,1fr)_120px_110px]"
-                >
-                  <div className="min-w-0">
-                    <div className="truncate font-semibold">{post.title}</div>
-                    <div className="mt-1 text-sm text-stone-500">
-                      {post.category} - {post.author}
+            {posts.length > 0 ? (
+              <div className="overflow-hidden rounded-[8px] border border-stone-200">
+                {posts.map((post) => (
+                  <div
+                    key={post.slug}
+                    className="grid gap-4 border-b border-stone-200 p-4 last:border-b-0 xl:grid-cols-[minmax(0,1fr)_110px_110px_260px]"
+                  >
+                    <div className="min-w-0">
+                      <div className="truncate font-semibold">{post.title}</div>
+                      <div className="mt-1 text-sm text-stone-500">
+                        {post.category} - {post.author}
+                      </div>
                     </div>
+                    <div className="text-sm text-stone-500">{post.readTime}</div>
+                    <div>
+                      <span
+                        className={
+                          post.status === "PUBLISHED"
+                            ? "rounded-[8px] bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-800"
+                            : "rounded-[8px] bg-amber-50 px-3 py-1 text-xs font-semibold text-amber-800"
+                        }
+                      >
+                        {post.status === "PUBLISHED" ? "Published" : "Draft"}
+                      </span>
+                    </div>
+                    <ArticleActions
+                      slug={post.slug}
+                      title={post.title}
+                      status={post.status}
+                    />
                   </div>
-                  <div className="text-sm text-stone-500">{post.readTime}</div>
-                  <div>
-                    <span
-                      className={
-                        post.status === "PUBLISHED"
-                          ? "rounded-[8px] bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-800"
-                          : "rounded-[8px] bg-amber-50 px-3 py-1 text-xs font-semibold text-amber-800"
-                      }
-                    >
-                      {post.status === "PUBLISHED" ? "Published" : "Draft"}
-                    </span>
-                  </div>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            ) : (
+              <div className="rounded-[8px] border border-dashed border-stone-300 bg-stone-50 p-8 text-center">
+                <h3 className="text-lg font-semibold">
+                  Belum ada artikel tersimpan.
+                </h3>
+                <p className="mx-auto mt-2 max-w-md text-sm leading-6 text-stone-500">
+                  Buat artikel pertama dari form di bawah. Artikel yang
+                  dipublish akan langsung muncul di halaman blog.
+                </p>
+                <a
+                  href="#buat-artikel"
+                  className="mt-5 inline-flex rounded-[8px] bg-emerald-700 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-800"
+                >
+                  Buat Artikel
+                </a>
+              </div>
+            )}
           </section>
 
           <aside className="rounded-[8px] bg-stone-950 p-5 text-white">
@@ -200,6 +231,56 @@ function Metric({ label, value }: { label: string; value: string }) {
       <div className="mt-2 text-3xl font-semibold">{value}</div>
     </div>
   );
+}
+
+function DashboardAlert({
+  error,
+  success,
+}: {
+  error?: string;
+  success?: string;
+}) {
+  if (error === "missing-fields") {
+    return (
+      <div className="mt-4 rounded-[8px] border border-red-200 bg-red-50 px-4 py-3 text-sm font-medium text-red-700">
+        Lengkapi judul, ringkasan, dan isi artikel sebelum menyimpan.
+      </div>
+    );
+  }
+
+  if (error === "invalid-action") {
+    return (
+      <div className="mt-4 rounded-[8px] border border-red-200 bg-red-50 px-4 py-3 text-sm font-medium text-red-700">
+        Aksi tidak valid. Coba ulangi dari dashboard.
+      </div>
+    );
+  }
+
+  if (success === "status-updated") {
+    return (
+      <div className="mt-4 rounded-[8px] border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-medium text-emerald-800">
+        Status artikel berhasil diperbarui.
+      </div>
+    );
+  }
+
+  if (success === "post-deleted") {
+    return (
+      <div className="mt-4 rounded-[8px] border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-medium text-emerald-800">
+        Artikel berhasil dihapus.
+      </div>
+    );
+  }
+
+  if (success === "post-updated") {
+    return (
+      <div className="mt-4 rounded-[8px] border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-medium text-emerald-800">
+        Artikel berhasil diperbarui.
+      </div>
+    );
+  }
+
+  return null;
 }
 
 function Field({

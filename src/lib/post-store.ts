@@ -28,6 +28,8 @@ export type NewPostInput = {
   status: PostStatus;
 };
 
+export type UpdatePostInput = NewPostInput;
+
 const postsFilePath = path.join(process.cwd(), "src", "data", "posts.json");
 const defaultCover =
   "https://images.unsplash.com/photo-1516321318423-f06f85e504b3?auto=format&fit=crop&w=1400&q=80";
@@ -59,6 +61,11 @@ export async function getPostBySlug(slug: string) {
   return posts.find((post) => post.slug === slug);
 }
 
+export async function getAnyPostBySlug(slug: string) {
+  const posts = await getPosts();
+  return posts.find((post) => post.slug === slug);
+}
+
 export async function createPost(input: NewPostInput) {
   const posts = await getPosts();
   const slug = createUniqueSlug(input.title, posts);
@@ -76,13 +83,7 @@ export async function createPost(input: NewPostInput) {
     author: "superadmin",
     readTime: calculateReadTime(content),
     publishedAt:
-      input.status === "PUBLISHED"
-        ? new Intl.DateTimeFormat("id-ID", {
-            day: "2-digit",
-            month: "short",
-            year: "numeric",
-          }).format(new Date())
-        : "Draft",
+      input.status === "PUBLISHED" ? formatPublishedDate() : "Draft",
     cover: normalizeCoverUrl(input.cover),
     status: input.status,
   };
@@ -91,6 +92,71 @@ export async function createPost(input: NewPostInput) {
   await writeFile(postsFilePath, JSON.stringify([post, ...posts], null, 2));
 
   return post;
+}
+
+export async function updatePostStatus(slug: string, status: PostStatus) {
+  const posts = await getPosts();
+  const nextPosts = posts.map((post) => {
+    if (post.slug !== slug) {
+      return post;
+    }
+
+    return {
+      ...post,
+      status,
+      publishedAt:
+        status === "PUBLISHED" && post.publishedAt === "Draft"
+          ? formatPublishedDate()
+          : post.publishedAt,
+    };
+  });
+
+  await writePosts(nextPosts);
+}
+
+export async function updatePost(slug: string, input: UpdatePostInput) {
+  const posts = await getPosts();
+  const currentPost = posts.find((post) => post.slug === slug);
+
+  if (!currentPost) {
+    return null;
+  }
+
+  const content = input.content
+    .split(/\r?\n/)
+    .map((paragraph) => paragraph.trim())
+    .filter(Boolean);
+
+  const nextPosts = posts.map((post) => {
+    if (post.slug !== slug) {
+      return post;
+    }
+
+    return {
+      ...post,
+      title: input.title.trim(),
+      excerpt: input.excerpt.trim(),
+      content,
+      category: input.category.trim() || "General",
+      cover: normalizeCoverUrl(input.cover),
+      status: input.status,
+      readTime: calculateReadTime(content),
+      publishedAt:
+        input.status === "PUBLISHED" && post.publishedAt === "Draft"
+          ? formatPublishedDate()
+          : input.status === "DRAFT"
+            ? "Draft"
+            : post.publishedAt,
+    };
+  });
+
+  await writePosts(nextPosts);
+  return nextPosts.find((post) => post.slug === slug) ?? null;
+}
+
+export async function deletePost(slug: string) {
+  const posts = await getPosts();
+  await writePosts(posts.filter((post) => post.slug !== slug));
 }
 
 function createUniqueSlug(title: string, posts: Post[]) {
@@ -121,6 +187,19 @@ function calculateReadTime(content: string[]) {
   const words = content.join(" ").split(/\s+/).filter(Boolean).length;
   const minutes = Math.max(1, Math.ceil(words / 180));
   return `${minutes} min read`;
+}
+
+function formatPublishedDate() {
+  return new Intl.DateTimeFormat("id-ID", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+  }).format(new Date());
+}
+
+async function writePosts(posts: Post[]) {
+  await mkdir(path.dirname(postsFilePath), { recursive: true });
+  await writeFile(postsFilePath, JSON.stringify(posts, null, 2));
 }
 
 function normalizeCoverUrl(cover?: string) {

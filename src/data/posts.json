@@ -1,65 +1,34 @@
 [
   {
-    "slug": "testing",
-    "title": "Testing",
-    "excerpt": "Testing",
+    "slug": "ai-condition",
+    "title": "AI Condition",
+    "excerpt": "AI Condition",
     "content": [
-      "testing aja"
+      "Frasa AI Condition\" dapat merujuk pada beberapa konsep berbeda tergantung pada konteksnya.",
+      "Tiga arti paling umum dari \"kondisi AI\" meliputi:",
+      "1. AI dalam Diagnosis MedisDalam bidang perawatan kesehatan, AI semakin banyak digunakan sebagai alat bantu diagnostik untuk menganalisis citra medis (seperti mendeteksi kondisi kulit, melanoma, atau kelainan pada rontgen) atau untuk membantu dokter dalam mengidentifikasi kondisi kesehatan yang kompleks.Catatan keandalan: Meskipun alat AI (seperti DxGPT atau aplikasi dermatologi khusus) sangat baik untuk pemeriksaan awal, terkadang alat ini dapat membuat kesalahan atau mengarang kondisi medis palsu. Selalu verifikasi diagnosis AI dengan dokter bersertifikat di daerah Anda.",
+      "2. Pemeliharaan Berbasis Kondisi (Condition-Based Maintenance/CBM)Dalam bidang teknik dan manufaktur, pemantauan kondisi berbasis AI mengandalkan sensor IoT untuk terus memantau kondisi aset fisik (seperti motor induktif, mesin, atau server pusat data).Nilai tambah: Alih-alih memperbaiki peralatan berdasarkan jadwal yang kaku, AI memprediksi kapan mesin akan rusak, sehingga mengurangi biaya perawatan sebesar 30-50%.]",
+      "3. \"Kondisi AI\" dalam OtomasiDalam desain AI percakapan dan chatbot, Kondisi AI adalah aturan pengalihan yang cerdas. Alih-alih menggunakan logika ya/tidak sederhana (\"Jika X = Y\"), kondisi AI menggunakan pembelajaran mesin untuk menafsirkan makna semantik atau nada emosional dari permintaan pengguna. Secara otomatis mengarahkan pengguna ke departemen yang tepat (seperti penjualan vs. dukungan) atau menandai frustrasi untuk mentransfer mereka ke agen manusia."
     ],
-    "category": "Testing",
+    "category": "Software Engineer",
+    "author": "superadmin",
+    "readTime": "2 min read",
+    "publishedAt": "14 Jun 2026",
+    "cover": "https://images.unsplash.com/photo-1516321318423-f06f85e504b3?auto=format&fit=crop&w=1400&q=80",
+    "status": "PUBLISHED"
+  },
+  {
+    "slug": "vibe-coding",
+    "title": "Vibe coding",
+    "excerpt": "Vibe Coding",
+    "content": [
+      "Vibe coding adalah praktik pengembangan perangkat lunak di mana seseorang membangun aplikasi atau situs web menggunakan instruksi bahasa alami (prompt) kepada kecerdasan buatan (AI) tanpa harus menulis kode baris demi baris secara manual. Istilah ini pertama kali dicetuskan oleh peneliti AI ternama, Andrej Karpathy, pada awal tahun 2025. Nama \"vibe\" diambil karena pengembang tidak lagi pusing memikirkan sintaksis pemrograman yang rumit, melainkan cukup mengarahkan \"suasana\" (vibe), logika, atau hasil akhir yang diinginkan, sementara agen AI menangani pembuatan kodenya."
+    ],
+    "category": "Software Engineer",
     "author": "superadmin",
     "readTime": "1 min read",
     "publishedAt": "14 Jun 2026",
-    "cover": "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRJZUcxOJFBDwxtDG61uweC1jQgSllvG0us9w&s",
-    "status": "PUBLISHED"
-  },
-  {
-    "slug": "membangun-kebiasaan-menulis",
-    "title": "Membangun Kebiasaan Menulis yang Bertahan Lama",
-    "excerpt": "Cara membuat ritme menulis yang ringan, konsisten, dan tidak bergantung pada mood.",
-    "content": [
-      "Menulis terasa berat ketika ia diperlakukan seperti acara besar. Cara yang lebih masuk akal adalah membuatnya kecil, jelas, dan mudah dimulai.",
-      "Mulai dari catatan pendek, kumpulkan ide mentah, lalu pilih satu sudut pandang yang ingin dibahas. Artikel yang baik biasanya lahir dari pengamatan kecil yang dikerjakan dengan sabar.",
-      "Di dashboard, pisahkan draft dari artikel terbit. Ini membuat proses editorial lebih tenang dan membantu penulis melihat progres tanpa merasa semuanya harus selesai hari itu juga."
-    ],
-    "category": "Writing",
-    "author": "Ridho",
-    "readTime": "4 min read",
-    "publishedAt": "14 Jun 2026",
-    "cover": "https://images.unsplash.com/photo-1499750310107-5fef28a66643?auto=format&fit=crop&w=1400&q=80",
-    "featured": true,
-    "status": "PUBLISHED"
-  },
-  {
-    "slug": "desain-blog-yang-nyaman-dibaca",
-    "title": "Desain Blog yang Nyaman Dibaca di Mobile dan Desktop",
-    "excerpt": "Layout, ritme tipografi, dan detail interaksi kecil yang membuat pembaca betah.",
-    "content": [
-      "Blog yang nyaman dibaca bukan hanya soal warna yang cantik. Jarak antar elemen, ukuran teks, kontras, dan panjang baris punya peran besar.",
-      "Di mobile, pembaca butuh navigasi ringkas dan konten yang langsung terlihat. Di desktop, manfaatkan ruang untuk kategori, artikel terkait, dan ringkasan penulis.",
-      "Gunakan visual secukupnya untuk memberi konteks. Cover image yang kuat membantu artikel terasa hidup tanpa mengganggu fokus membaca."
-    ],
-    "category": "Design",
-    "author": "Via",
-    "readTime": "6 min read",
-    "publishedAt": "12 Jun 2026",
-    "cover": "https://images.unsplash.com/photo-1497366754035-f200968a6e72?auto=format&fit=crop&w=1400&q=80",
-    "status": "PUBLISHED"
-  },
-  {
-    "slug": "arsitektur-mvp-blog-modern",
-    "title": "Arsitektur MVP Blog Modern dengan Next.js",
-    "excerpt": "Pisahkan UI, data, auth, dan editorial flow sejak awal agar project mudah tumbuh.",
-    "content": [
-      "Untuk MVP, fokus pada alur utama: membaca artikel, login penulis, membuat draft, publish, dan mengelola konten.",
-      "Next.js cocok karena halaman publik bisa cepat dan SEO-friendly, sementara dashboard bisa tetap interaktif. Setelah desain terasa pas, data dummy dapat diganti dengan Prisma dan PostgreSQL.",
-      "Jaga model data tetap sederhana: User, Post, Category, Tag, Comment, dan Media. Struktur ini cukup kuat untuk tahap awal tanpa terasa berlebihan."
-    ],
-    "category": "Engineering",
-    "author": "superadmin",
-    "readTime": "5 min read",
-    "publishedAt": "10 Jun 2026",
-    "cover": "https://images.unsplash.com/photo-1555066931-4365d14bab8c?auto=format&fit=crop&w=1400&q=80",
+    "cover": "https://images.unsplash.com/photo-1516321318423-f06f85e504b3?auto=format&fit=crop&w=1400&q=80",
     "status": "PUBLISHED"
   }
 ]
