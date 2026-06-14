@@ -93,18 +93,29 @@ npm run build
 Add these environment variables in Vercel Project Settings before deploying:
 
 ```env
-DATABASE_URL="postgresql://USER:PASSWORD@HOST:5432/DATABASE?schema=public"
+DATABASE_URL="postgresql://USER:PASSWORD@POOLER_HOST:6543/DATABASE?schema=public&uselibpqcompat=true&sslmode=require"
+DIRECT_URL="postgresql://USER:PASSWORD@POOLER_HOST:5432/DATABASE?schema=public&uselibpqcompat=true&sslmode=require"
 ADMIN_USERNAME="superadmin"
 ADMIN_PASSWORD="change-this-password"
 DASHBOARD_ACCESS_KEY="change-this-to-a-long-random-value"
 ```
 
+Do not use `localhost` in `DATABASE_URL` on Vercel. Use the hosted PostgreSQL
+connection string from Vercel Postgres, Neon, Supabase, Railway, or another
+database provider.
+
+For Supabase, use the transaction pooler URL on port `6543` as `DATABASE_URL`
+for the app runtime, and use the session pooler/direct URL on port `5432` as
+`DIRECT_URL` for Prisma migrations.
+
 The build script runs `prisma generate` before `next build`, so the generated Prisma client does not need to be committed.
 
-Before the first production deploy, run `npm run db:deploy` against the production database. Dashboard updates and article views will then persist in PostgreSQL instead of local files.
-
-If you want Vercel to run migrations during deployment, set the Vercel Build Command to:
+This repo includes `vercel.json`, so Vercel runs migrations during deployment
+with:
 
 ```bash
 npm run build:production
 ```
+
+Dashboard updates and article views will then persist in PostgreSQL instead of
+local files.
