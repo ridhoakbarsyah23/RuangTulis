@@ -81,3 +81,16 @@ npm run db:studio
 npm run lint
 npm run build
 ```
+
+## Vercel Deployment
+
+Add these environment variables in Vercel Project Settings before deploying:
+
+```env
+DATABASE_URL="postgresql://USER:PASSWORD@HOST:5432/DATABASE?schema=public"
+ADMIN_USERNAME="superadmin"
+ADMIN_PASSWORD="change-this-password"
+DASHBOARD_ACCESS_KEY="change-this-to-a-long-random-value"
+```
+
+The build script runs `prisma generate` before `next build`, so the generated Prisma client does not need to be committed.
