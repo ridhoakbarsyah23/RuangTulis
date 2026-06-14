@@ -1,36 +1,83 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# RuangTulis
+
+RuangTulis is a modern blog app built with Next.js, TypeScript, Tailwind CSS, and Prisma-ready PostgreSQL models.
+
+## Features
+
+- Public blog homepage with featured and latest articles
+- Dynamic article detail pages
+- Superadmin login gate for dashboard access
+- Custom logout confirmation modal
+- Dashboard for creating draft or published articles
+- Local JSON post storage for fast development
+- Prisma schema prepared for PostgreSQL migration
+
+## Tech Stack
+
+- Next.js App Router
+- React
+- TypeScript
+- Tailwind CSS
+- Prisma
+- PostgreSQL-ready schema
 
 ## Getting Started
 
-First, run the development server:
+Install dependencies:
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+npm install
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Create your local environment file:
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+```bash
+cp .env.example .env
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+Run the development server:
 
-## Learn More
+```bash
+npm run dev:3001
+```
 
-To learn more about Next.js, take a look at the following resources:
+Open:
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+```txt
+http://localhost:3001
+```
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Admin Access
 
-## Deploy on Vercel
+Set the dashboard credentials in `.env`:
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+```env
+ADMIN_USERNAME="superadmin"
+ADMIN_PASSWORD="admin123"
+DASHBOARD_ACCESS_KEY="change-this-to-a-long-random-value"
+```
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Dashboard route:
+
+```txt
+http://localhost:3001/dashboard
+```
+
+## Database
+
+The current app stores posts in `src/data/posts.json`.
+
+Prisma is already configured for a future PostgreSQL migration. After setting `DATABASE_URL`, use:
+
+```bash
+npm run db:generate
+npm run db:migrate
+npm run db:studio
+```
+
+## Quality Checks
+
+```bash
+npm run lint
+npm run build
+```

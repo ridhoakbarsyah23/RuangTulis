@@ -1,0 +1,65 @@
+[
+  {
+    "slug": "testing",
+    "title": "Testing",
+    "excerpt": "Testing",
+    "content": [
+      "testing aja"
+    ],
+    "category": "Testing",
+    "author": "superadmin",
+    "readTime": "1 min read",
+    "publishedAt": "14 Jun 2026",
+    "cover": "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRJZUcxOJFBDwxtDG61uweC1jQgSllvG0us9w&s",
+    "status": "PUBLISHED"
+  },
+  {
+    "slug": "membangun-kebiasaan-menulis",
+    "title": "Membangun Kebiasaan Menulis yang Bertahan Lama",
+    "excerpt": "Cara membuat ritme menulis yang ringan, konsisten, dan tidak bergantung pada mood.",
+    "content": [
+      "Menulis terasa berat ketika ia diperlakukan seperti acara besar. Cara yang lebih masuk akal adalah membuatnya kecil, jelas, dan mudah dimulai.",
+      "Mulai dari catatan pendek, kumpulkan ide mentah, lalu pilih satu sudut pandang yang ingin dibahas. Artikel yang baik biasanya lahir dari pengamatan kecil yang dikerjakan dengan sabar.",
+      "Di dashboard, pisahkan draft dari artikel terbit. Ini membuat proses editorial lebih tenang dan membantu penulis melihat progres tanpa merasa semuanya harus selesai hari itu juga."
+    ],
+    "category": "Writing",
+    "author": "Ridho",
+    "readTime": "4 min read",
+    "publishedAt": "14 Jun 2026",
+    "cover": "https://images.unsplash.com/photo-1499750310107-5fef28a66643?auto=format&fit=crop&w=1400&q=80",
+    "featured": true,
+    "status": "PUBLISHED"
+  },
+  {
+    "slug": "desain-blog-yang-nyaman-dibaca",
+    "title": "Desain Blog yang Nyaman Dibaca di Mobile dan Desktop",
+    "excerpt": "Layout, ritme tipografi, dan detail interaksi kecil yang membuat pembaca betah.",
+    "content": [
+      "Blog yang nyaman dibaca bukan hanya soal warna yang cantik. Jarak antar elemen, ukuran teks, kontras, dan panjang baris punya peran besar.",
+      "Di mobile, pembaca butuh navigasi ringkas dan konten yang langsung terlihat. Di desktop, manfaatkan ruang untuk kategori, artikel terkait, dan ringkasan penulis.",
+      "Gunakan visual secukupnya untuk memberi konteks. Cover image yang kuat membantu artikel terasa hidup tanpa mengganggu fokus membaca."
+    ],
+    "category": "Design",
+    "author": "Via",
+    "readTime": "6 min read",
+    "publishedAt": "12 Jun 2026",
+    "cover": "https://images.unsplash.com/photo-1497366754035-f200968a6e72?auto=format&fit=crop&w=1400&q=80",
+    "status": "PUBLISHED"
+  },
+  {
+    "slug": "arsitektur-mvp-blog-modern",
+    "title": "Arsitektur MVP Blog Modern dengan Next.js",
+    "excerpt": "Pisahkan UI, data, auth, dan editorial flow sejak awal agar project mudah tumbuh.",
+    "content": [
+      "Untuk MVP, fokus pada alur utama: membaca artikel, login penulis, membuat draft, publish, dan mengelola konten.",
+      "Next.js cocok karena halaman publik bisa cepat dan SEO-friendly, sementara dashboard bisa tetap interaktif. Setelah desain terasa pas, data dummy dapat diganti dengan Prisma dan PostgreSQL.",
+      "Jaga model data tetap sederhana: User, Post, Category, Tag, Comment, dan Media. Struktur ini cukup kuat untuk tahap awal tanpa terasa berlebihan."
+    ],
+    "category": "Engineering",
+    "author": "superadmin",
+    "readTime": "5 min read",
+    "publishedAt": "10 Jun 2026",
+    "cover": "https://images.unsplash.com/photo-1555066931-4365d14bab8c?auto=format&fit=crop&w=1400&q=80",
+    "status": "PUBLISHED"
+  }
+]
