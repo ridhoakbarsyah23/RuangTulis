@@ -1,11 +1,16 @@
--- CreateEnum
-CREATE TYPE "PostStatus" AS ENUM ('DRAFT', 'PUBLISHED', 'ARCHIVED');
+DO $$ BEGIN
+  CREATE TYPE "PostStatus" AS ENUM ('DRAFT', 'PUBLISHED', 'ARCHIVED');
+EXCEPTION
+  WHEN duplicate_object THEN null;
+END $$;
 
--- CreateEnum
-CREATE TYPE "UserRole" AS ENUM ('READER', 'AUTHOR', 'ADMIN');
+DO $$ BEGIN
+  CREATE TYPE "UserRole" AS ENUM ('READER', 'AUTHOR', 'ADMIN');
+EXCEPTION
+  WHEN duplicate_object THEN null;
+END $$;
 
--- CreateTable
-CREATE TABLE "User" (
+CREATE TABLE IF NOT EXISTS "User" (
     "id" TEXT NOT NULL,
     "name" TEXT NOT NULL,
     "email" TEXT NOT NULL,
@@ -17,8 +22,7 @@ CREATE TABLE "User" (
     CONSTRAINT "User_pkey" PRIMARY KEY ("id")
 );
 
--- CreateTable
-CREATE TABLE "Category" (
+CREATE TABLE IF NOT EXISTS "Category" (
     "id" TEXT NOT NULL,
     "name" TEXT NOT NULL,
     "slug" TEXT NOT NULL,
@@ -29,8 +33,7 @@ CREATE TABLE "Category" (
     CONSTRAINT "Category_pkey" PRIMARY KEY ("id")
 );
 
--- CreateTable
-CREATE TABLE "Post" (
+CREATE TABLE IF NOT EXISTS "Post" (
     "id" TEXT NOT NULL,
     "title" TEXT NOT NULL,
     "slug" TEXT NOT NULL,
@@ -50,8 +53,7 @@ CREATE TABLE "Post" (
     CONSTRAINT "Post_pkey" PRIMARY KEY ("id")
 );
 
--- CreateTable
-CREATE TABLE "Tag" (
+CREATE TABLE IF NOT EXISTS "Tag" (
     "id" TEXT NOT NULL,
     "name" TEXT NOT NULL,
     "slug" TEXT NOT NULL,
@@ -60,8 +62,7 @@ CREATE TABLE "Tag" (
     CONSTRAINT "Tag_pkey" PRIMARY KEY ("id")
 );
 
--- CreateTable
-CREATE TABLE "Comment" (
+CREATE TABLE IF NOT EXISTS "Comment" (
     "id" TEXT NOT NULL,
     "body" TEXT NOT NULL,
     "postId" TEXT NOT NULL,
@@ -72,8 +73,7 @@ CREATE TABLE "Comment" (
     CONSTRAINT "Comment_pkey" PRIMARY KEY ("id")
 );
 
--- CreateTable
-CREATE TABLE "Media" (
+CREATE TABLE IF NOT EXISTS "Media" (
     "id" TEXT NOT NULL,
     "url" TEXT NOT NULL,
     "alt" TEXT,
@@ -83,70 +83,67 @@ CREATE TABLE "Media" (
     CONSTRAINT "Media_pkey" PRIMARY KEY ("id")
 );
 
--- CreateTable
-CREATE TABLE "_PostTags" (
+CREATE TABLE IF NOT EXISTS "_PostTags" (
     "A" TEXT NOT NULL,
-    "B" TEXT NOT NULL,
-
-    CONSTRAINT "_PostTags_AB_pkey" PRIMARY KEY ("A","B")
+    "B" TEXT NOT NULL
 );
 
--- CreateIndex
-CREATE UNIQUE INDEX "User_email_key" ON "User"("email");
+ALTER TABLE "Post" ADD COLUMN IF NOT EXISTS "views" INTEGER NOT NULL DEFAULT 0;
+ALTER TABLE "Post" ADD COLUMN IF NOT EXISTS "featured" BOOLEAN NOT NULL DEFAULT false;
 
--- CreateIndex
-CREATE UNIQUE INDEX "Category_name_key" ON "Category"("name");
+CREATE UNIQUE INDEX IF NOT EXISTS "User_email_key" ON "User"("email");
+CREATE UNIQUE INDEX IF NOT EXISTS "Category_name_key" ON "Category"("name");
+CREATE UNIQUE INDEX IF NOT EXISTS "Category_slug_key" ON "Category"("slug");
+CREATE UNIQUE INDEX IF NOT EXISTS "Post_slug_key" ON "Post"("slug");
+CREATE INDEX IF NOT EXISTS "Post_status_publishedAt_idx" ON "Post"("status", "publishedAt");
+CREATE INDEX IF NOT EXISTS "Post_authorId_idx" ON "Post"("authorId");
+CREATE INDEX IF NOT EXISTS "Post_categoryId_idx" ON "Post"("categoryId");
+CREATE UNIQUE INDEX IF NOT EXISTS "Tag_name_key" ON "Tag"("name");
+CREATE UNIQUE INDEX IF NOT EXISTS "Tag_slug_key" ON "Tag"("slug");
+CREATE INDEX IF NOT EXISTS "Comment_postId_idx" ON "Comment"("postId");
+CREATE INDEX IF NOT EXISTS "Comment_authorId_idx" ON "Comment"("authorId");
+CREATE INDEX IF NOT EXISTS "Media_postId_idx" ON "Media"("postId");
+CREATE UNIQUE INDEX IF NOT EXISTS "_PostTags_AB_unique" ON "_PostTags"("A", "B");
+CREATE INDEX IF NOT EXISTS "_PostTags_B_index" ON "_PostTags"("B");
 
--- CreateIndex
-CREATE UNIQUE INDEX "Category_slug_key" ON "Category"("slug");
+DO $$ BEGIN
+  ALTER TABLE "Post" ADD CONSTRAINT "Post_authorId_fkey" FOREIGN KEY ("authorId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+EXCEPTION
+  WHEN duplicate_object THEN null;
+END $$;
 
--- CreateIndex
-CREATE UNIQUE INDEX "Post_slug_key" ON "Post"("slug");
+DO $$ BEGIN
+  ALTER TABLE "Post" ADD CONSTRAINT "Post_categoryId_fkey" FOREIGN KEY ("categoryId") REFERENCES "Category"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+EXCEPTION
+  WHEN duplicate_object THEN null;
+END $$;
 
--- CreateIndex
-CREATE INDEX "Post_status_publishedAt_idx" ON "Post"("status", "publishedAt");
+DO $$ BEGIN
+  ALTER TABLE "Comment" ADD CONSTRAINT "Comment_postId_fkey" FOREIGN KEY ("postId") REFERENCES "Post"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+EXCEPTION
+  WHEN duplicate_object THEN null;
+END $$;
 
--- CreateIndex
-CREATE INDEX "Post_authorId_idx" ON "Post"("authorId");
+DO $$ BEGIN
+  ALTER TABLE "Comment" ADD CONSTRAINT "Comment_authorId_fkey" FOREIGN KEY ("authorId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+EXCEPTION
+  WHEN duplicate_object THEN null;
+END $$;
 
--- CreateIndex
-CREATE INDEX "Post_categoryId_idx" ON "Post"("categoryId");
+DO $$ BEGIN
+  ALTER TABLE "Media" ADD CONSTRAINT "Media_postId_fkey" FOREIGN KEY ("postId") REFERENCES "Post"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+EXCEPTION
+  WHEN duplicate_object THEN null;
+END $$;
 
--- CreateIndex
-CREATE UNIQUE INDEX "Tag_name_key" ON "Tag"("name");
+DO $$ BEGIN
+  ALTER TABLE "_PostTags" ADD CONSTRAINT "_PostTags_A_fkey" FOREIGN KEY ("A") REFERENCES "Post"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+EXCEPTION
+  WHEN duplicate_object THEN null;
+END $$;
 
--- CreateIndex
-CREATE UNIQUE INDEX "Tag_slug_key" ON "Tag"("slug");
-
--- CreateIndex
-CREATE INDEX "Comment_postId_idx" ON "Comment"("postId");
-
--- CreateIndex
-CREATE INDEX "Comment_authorId_idx" ON "Comment"("authorId");
-
--- CreateIndex
-CREATE INDEX "Media_postId_idx" ON "Media"("postId");
-
--- CreateIndex
-CREATE INDEX "_PostTags_B_index" ON "_PostTags"("B");
-
--- AddForeignKey
-ALTER TABLE "Post" ADD CONSTRAINT "Post_authorId_fkey" FOREIGN KEY ("authorId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
-
--- AddForeignKey
-ALTER TABLE "Post" ADD CONSTRAINT "Post_categoryId_fkey" FOREIGN KEY ("categoryId") REFERENCES "Category"("id") ON DELETE SET NULL ON UPDATE CASCADE;
-
--- AddForeignKey
-ALTER TABLE "Comment" ADD CONSTRAINT "Comment_postId_fkey" FOREIGN KEY ("postId") REFERENCES "Post"("id") ON DELETE CASCADE ON UPDATE CASCADE;
-
--- AddForeignKey
-ALTER TABLE "Comment" ADD CONSTRAINT "Comment_authorId_fkey" FOREIGN KEY ("authorId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
-
--- AddForeignKey
-ALTER TABLE "Media" ADD CONSTRAINT "Media_postId_fkey" FOREIGN KEY ("postId") REFERENCES "Post"("id") ON DELETE SET NULL ON UPDATE CASCADE;
-
--- AddForeignKey
-ALTER TABLE "_PostTags" ADD CONSTRAINT "_PostTags_A_fkey" FOREIGN KEY ("A") REFERENCES "Post"("id") ON DELETE CASCADE ON UPDATE CASCADE;
-
--- AddForeignKey
-ALTER TABLE "_PostTags" ADD CONSTRAINT "_PostTags_B_fkey" FOREIGN KEY ("B") REFERENCES "Tag"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+DO $$ BEGIN
+  ALTER TABLE "_PostTags" ADD CONSTRAINT "_PostTags_B_fkey" FOREIGN KEY ("B") REFERENCES "Tag"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+EXCEPTION
+  WHEN duplicate_object THEN null;
+END $$;

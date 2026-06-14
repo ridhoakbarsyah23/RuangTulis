@@ -66,57 +66,83 @@ const postIncludes = {
 let seedPromise: Promise<void> | null = null;
 
 export async function getPosts() {
-  await seedPostsIfNeeded();
+  try {
+    await seedPostsIfNeeded();
 
-  const posts = await prisma.post.findMany({
-    include: postIncludes,
-    orderBy: [{ createdAt: "desc" }],
-  });
+    const posts = await prisma.post.findMany({
+      include: postIncludes,
+      orderBy: [{ createdAt: "desc" }],
+    });
 
-  return posts
-    .filter((post) => post.status === "DRAFT" || post.status === "PUBLISHED")
-    .map(mapPost);
+    return posts
+      .filter((post) => post.status === "DRAFT" || post.status === "PUBLISHED")
+      .map(mapPost);
+  } catch (error) {
+    console.error("Falling back to seed posts because database read failed", error);
+    return getSeedPosts();
+  }
 }
 
 export async function getPublishedPosts() {
-  await seedPostsIfNeeded();
+  try {
+    await seedPostsIfNeeded();
 
-  const posts = await prisma.post.findMany({
-    where: { status: "PUBLISHED" },
-    include: postIncludes,
-    orderBy: [{ publishedAt: "desc" }, { createdAt: "desc" }],
-  });
-
-  return posts.map(mapPost);
-}
-
-export async function getFeaturedPost() {
-  await seedPostsIfNeeded();
-
-  const post =
-    (await prisma.post.findFirst({
-      where: { status: "PUBLISHED", featured: true },
-      include: postIncludes,
-      orderBy: [{ publishedAt: "desc" }, { createdAt: "desc" }],
-    })) ??
-    (await prisma.post.findFirst({
+    const posts = await prisma.post.findMany({
       where: { status: "PUBLISHED" },
       include: postIncludes,
       orderBy: [{ publishedAt: "desc" }, { createdAt: "desc" }],
-    }));
+    });
 
-  return post ? mapPost(post) : undefined;
+    return posts.map(mapPost);
+  } catch (error) {
+    console.error(
+      "Falling back to seed published posts because database read failed",
+      error,
+    );
+    return getSeedPosts().filter((post) => post.status === "PUBLISHED");
+  }
+}
+
+export async function getFeaturedPost() {
+  try {
+    await seedPostsIfNeeded();
+
+    const post =
+      (await prisma.post.findFirst({
+        where: { status: "PUBLISHED", featured: true },
+        include: postIncludes,
+        orderBy: [{ publishedAt: "desc" }, { createdAt: "desc" }],
+      })) ??
+      (await prisma.post.findFirst({
+        where: { status: "PUBLISHED" },
+        include: postIncludes,
+        orderBy: [{ publishedAt: "desc" }, { createdAt: "desc" }],
+      }));
+
+    return post ? mapPost(post) : undefined;
+  } catch (error) {
+    console.error("Falling back to seed featured post because database read failed", error);
+    const posts = getSeedPosts().filter((post) => post.status === "PUBLISHED");
+    return posts.find((post) => post.featured) ?? posts[0];
+  }
 }
 
 export async function getPostBySlug(slug: string) {
-  await seedPostsIfNeeded();
+  try {
+    await seedPostsIfNeeded();
 
-  const post = await prisma.post.findFirst({
-    where: { slug, status: "PUBLISHED" },
-    include: postIncludes,
-  });
+    const post = await prisma.post.findFirst({
+      where: { slug, status: "PUBLISHED" },
+      include: postIncludes,
+    });
 
-  return post ? mapPost(post) : undefined;
+    return post ? mapPost(post) : undefined;
+  } catch (error) {
+    console.error("Falling back to seed post because database read failed", error);
+    return getSeedPosts().find(
+      (post) => post.slug === slug && post.status === "PUBLISHED",
+    );
+  }
 }
 
 export async function getAnyPostBySlug(slug: string) {
@@ -218,24 +244,31 @@ export async function updatePost(slug: string, input: UpdatePostInput) {
 }
 
 export async function incrementPostViews(slug: string) {
-  await seedPostsIfNeeded();
+  try {
+    await seedPostsIfNeeded();
 
-  const currentPost = await prisma.post.findFirst({
-    where: { slug, status: "PUBLISHED" },
-    select: { id: true },
-  });
+    const currentPost = await prisma.post.findFirst({
+      where: { slug, status: "PUBLISHED" },
+      select: { id: true },
+    });
 
-  if (!currentPost) {
-    return null;
+    if (!currentPost) {
+      return null;
+    }
+
+    const post = await prisma.post.update({
+      where: { id: currentPost.id },
+      data: { views: { increment: 1 } },
+      include: postIncludes,
+    });
+
+    return mapPost(post);
+  } catch (error) {
+    console.error("Skipping view increment because database write failed", error);
+    return getSeedPosts().find(
+      (post) => post.slug === slug && post.status === "PUBLISHED",
+    ) ?? null;
   }
-
-  const post = await prisma.post.update({
-    where: { id: currentPost.id },
-    data: { views: { increment: 1 } },
-    include: postIncludes,
-  });
-
-  return mapPost(post);
 }
 
 export async function deletePost(slug: string) {
@@ -415,4 +448,28 @@ function normalizeCoverUrl(cover?: string) {
 
 function normalizeStatus(status: string): PostStatus {
   return status === "PUBLISHED" ? "PUBLISHED" : "DRAFT";
+}
+
+function getSeedPosts() {
+  return postsSeed.map((post) => {
+    const content = Array.isArray(post.content)
+      ? post.content
+      : splitContent(String(post.content));
+    const status = normalizeStatus(post.status);
+
+    return {
+      slug: post.slug,
+      title: post.title,
+      excerpt: post.excerpt,
+      content,
+      category: post.category || "General",
+      author: post.author || getAdminUsername(),
+      readTime: post.readTime || `${calculateReadMinutes(content)} min read`,
+      publishedAt: status === "PUBLISHED" ? post.publishedAt : "Draft",
+      cover: normalizeCoverUrl(post.cover),
+      featured: "featured" in post ? Boolean(post.featured) : false,
+      views: post.views ?? 0,
+      status,
+    };
+  });
 }
