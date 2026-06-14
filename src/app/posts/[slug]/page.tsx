@@ -1,7 +1,12 @@
 import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { getPostBySlug, getPublishedPosts } from "@/lib/post-store";
+import {
+  formatViews,
+  getPostBySlug,
+  getPublishedPosts,
+  incrementPostViews,
+} from "@/lib/post-store";
 
 export const dynamic = "force-dynamic";
 
@@ -36,7 +41,7 @@ export default async function PostDetail({
   params: Promise<{ slug: string }>;
 }) {
   const { slug } = await params;
-  const post = await getPostBySlug(slug);
+  const post = await incrementPostViews(slug);
 
   if (!post) {
     notFound();
@@ -78,6 +83,7 @@ export default async function PostDetail({
             </span>
             <span>{post.publishedAt}</span>
             <span>{post.readTime}</span>
+            <span>{formatViews(post.views ?? 0)} views</span>
           </div>
           <h1 className="mt-5 text-3xl font-semibold leading-tight sm:text-5xl lg:text-6xl">
             {post.title}
@@ -129,6 +135,12 @@ export default async function PostDetail({
               <div className="flex flex-wrap justify-between gap-2">
                 <dt className="text-stone-500">Tanggal</dt>
                 <dd className="font-medium break-words text-right">{post.publishedAt}</dd>
+              </div>
+              <div className="flex flex-wrap justify-between gap-2">
+                <dt className="text-stone-500">Views</dt>
+                <dd className="font-medium break-words text-right">
+                  {formatViews(post.views ?? 0)}
+                </dd>
               </div>
             </dl>
           </aside>

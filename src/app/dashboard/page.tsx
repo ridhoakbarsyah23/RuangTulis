@@ -2,7 +2,7 @@ import Link from "next/link";
 import { createPostAction } from "@/app/dashboard/actions";
 import { ArticleActions } from "@/app/dashboard/article-actions";
 import { LogoutButton } from "@/app/dashboard/logout-button";
-import { getPosts } from "@/lib/post-store";
+import { formatViews, getPosts, getTotalViews } from "@/lib/post-store";
 
 const tasks = [
   "Review draft sebelum publish",
@@ -21,6 +21,7 @@ export default async function Dashboard({
   const posts = await getPosts();
   const publishedPosts = posts.filter((post) => post.status === "PUBLISHED");
   const draftPosts = posts.filter((post) => post.status === "DRAFT");
+  const totalViews = getTotalViews(publishedPosts);
 
   return (
     <main className="min-h-screen bg-stone-100 text-stone-950">
@@ -61,10 +62,11 @@ export default async function Dashboard({
           </a>
         </div>
 
-        <div className="grid gap-4 md:grid-cols-3">
+        <div className="grid gap-4 md:grid-cols-4">
           <Metric label="Published" value={String(publishedPosts.length)} />
           <Metric label="Drafts" value={String(draftPosts.length)} />
           <Metric label="Total Posts" value={String(posts.length)} />
+          <Metric label="Views" value={formatViews(totalViews)} />
         </div>
 
         <DashboardAlert error={params.error} success={params.success} />
@@ -88,7 +90,7 @@ export default async function Dashboard({
                 {posts.map((post) => (
                   <div
                     key={post.slug}
-                    className="grid gap-4 border-b border-stone-200 p-4 last:border-b-0 xl:grid-cols-[minmax(0,1fr)_110px_110px_260px]"
+                    className="grid gap-4 border-b border-stone-200 p-4 last:border-b-0 xl:grid-cols-[minmax(0,1fr)_110px_90px_110px_260px]"
                   >
                     <div className="min-w-0">
                       <div className="truncate font-semibold">{post.title}</div>
@@ -97,6 +99,9 @@ export default async function Dashboard({
                       </div>
                     </div>
                     <div className="text-sm text-stone-500">{post.readTime}</div>
+                    <div className="text-sm text-stone-500">
+                      {formatViews(post.views ?? 0)} views
+                    </div>
                     <div>
                       <span
                         className={

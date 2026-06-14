@@ -31,6 +31,7 @@ export default async function EditPostPage({
             {post.status === "PUBLISHED" ? (
               <Link
                 href={`/posts/${post.slug}`}
+                prefetch={false}
                 className="rounded-[8px] border border-stone-300 px-4 py-2 text-sm font-semibold hover:border-stone-950"
               >
                 View

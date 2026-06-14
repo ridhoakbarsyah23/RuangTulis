@@ -1,6 +1,11 @@
 import Image from "next/image";
 import Link from "next/link";
-import { getFeaturedPost, getPublishedPosts } from "@/lib/post-store";
+import {
+  formatViews,
+  getFeaturedPost,
+  getPublishedPosts,
+  getTotalViews,
+} from "@/lib/post-store";
 
 export const dynamic = "force-dynamic";
 
@@ -9,6 +14,7 @@ export default async function Home() {
   const featuredPost = await getFeaturedPost();
   const otherPosts = posts.filter((post) => post.slug !== featuredPost?.slug);
   const categories = Array.from(new Set(posts.map((post) => post.category)));
+  const totalViews = getTotalViews(posts);
 
   if (!featuredPost) {
     return (
@@ -95,6 +101,7 @@ export default async function Home() {
               </p>
               <Link
                 href={`/posts/${featuredPost.slug}`}
+                prefetch={false}
                 className="mt-6 inline-flex rounded-[8px] bg-emerald-700 px-5 py-3 text-sm font-semibold text-white hover:bg-emerald-800"
               >
                 Baca Artikel
@@ -127,7 +134,7 @@ export default async function Home() {
               <div className="mt-8 grid grid-cols-3 gap-3 border-t border-white/10 pt-6">
                 <Stat label="Posts" value={String(posts.length).padStart(2, "0")} />
                 <Stat label="Topics" value={String(categories.length).padStart(2, "0")} />
-                <Stat label="Views" value="12k" />
+                <Stat label="Views" value={formatViews(totalViews)} />
               </div>
             </div>
           </aside>
@@ -152,6 +159,7 @@ export default async function Home() {
             <Link
               key={post.slug}
               href={`/posts/${post.slug}`}
+              prefetch={false}
               className="group grid overflow-hidden rounded-[8px] bg-white shadow-sm ring-1 ring-stone-200 transition hover:-translate-y-0.5 hover:shadow-md sm:grid-cols-[180px_1fr]"
             >
               <div className="relative aspect-[16/10] sm:aspect-auto">

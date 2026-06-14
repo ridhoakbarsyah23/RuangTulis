@@ -16,6 +16,7 @@ export type Post = {
   publishedAt: string;
   cover: string;
   featured?: boolean;
+  views?: number;
   status: PostStatus;
 };
 
@@ -85,6 +86,7 @@ export async function createPost(input: NewPostInput) {
     publishedAt:
       input.status === "PUBLISHED" ? formatPublishedDate() : "Draft",
     cover: normalizeCoverUrl(input.cover),
+    views: 0,
     status: input.status,
   };
 
@@ -154,9 +156,42 @@ export async function updatePost(slug: string, input: UpdatePostInput) {
   return nextPosts.find((post) => post.slug === slug) ?? null;
 }
 
+export async function incrementPostViews(slug: string) {
+  const posts = await getPosts();
+  const postIndex = posts.findIndex(
+    (post) => post.slug === slug && post.status === "PUBLISHED",
+  );
+
+  if (postIndex === -1) {
+    return null;
+  }
+
+  const updatedPost = {
+    ...posts[postIndex],
+    views: (posts[postIndex].views ?? 0) + 1,
+  };
+  const nextPosts = [...posts];
+  nextPosts[postIndex] = updatedPost;
+
+  await writePosts(nextPosts);
+
+  return updatedPost;
+}
+
 export async function deletePost(slug: string) {
   const posts = await getPosts();
   await writePosts(posts.filter((post) => post.slug !== slug));
+}
+
+export function getTotalViews(posts: Post[]) {
+  return posts.reduce((total, post) => total + (post.views ?? 0), 0);
+}
+
+export function formatViews(views: number) {
+  return new Intl.NumberFormat("id-ID", {
+    notation: "compact",
+    maximumFractionDigits: 1,
+  }).format(views);
 }
 
 function createUniqueSlug(title: string, posts: Post[]) {
