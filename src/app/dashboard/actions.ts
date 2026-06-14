@@ -39,14 +39,21 @@ export async function createPostAction(formData: FormData) {
     redirect("/dashboard?error=missing-fields");
   }
 
-  const post = await createPost({
-    title,
-    excerpt,
-    content,
-    category,
-    cover,
-    status,
-  });
+  let post;
+
+  try {
+    post = await createPost({
+      title,
+      excerpt,
+      content,
+      category,
+      cover,
+      status,
+    });
+  } catch (error) {
+    console.error("Failed to create post", error);
+    redirect("/dashboard?error=database-unavailable#buat-artikel");
+  }
 
   revalidatePath("/");
   revalidatePath("/dashboard");
@@ -69,7 +76,12 @@ export async function togglePostStatusAction(formData: FormData) {
     redirect("/dashboard?error=invalid-action");
   }
 
-  await updatePostStatus(slug, status);
+  try {
+    await updatePostStatus(slug, status);
+  } catch (error) {
+    console.error("Failed to update post status", error);
+    redirect("/dashboard?error=database-unavailable");
+  }
 
   revalidatePath("/");
   revalidatePath("/dashboard");
@@ -94,14 +106,21 @@ export async function updatePostAction(formData: FormData) {
     redirect(`/dashboard/posts/${slug}/edit?error=missing-fields`);
   }
 
-  const post = await updatePost(slug, {
-    title,
-    excerpt,
-    content,
-    category,
-    cover,
-    status,
-  });
+  let post;
+
+  try {
+    post = await updatePost(slug, {
+      title,
+      excerpt,
+      content,
+      category,
+      cover,
+      status,
+    });
+  } catch (error) {
+    console.error("Failed to update post", error);
+    redirect(`/dashboard/posts/${slug}/edit?error=database-unavailable`);
+  }
 
   if (!post) {
     redirect("/dashboard?error=invalid-action");
@@ -128,7 +147,12 @@ export async function deletePostAction(formData: FormData) {
     redirect("/dashboard?error=invalid-action");
   }
 
-  await deletePost(slug);
+  try {
+    await deletePost(slug);
+  } catch (error) {
+    console.error("Failed to delete post", error);
+    redirect("/dashboard?error=database-unavailable");
+  }
 
   revalidatePath("/");
   revalidatePath("/dashboard");

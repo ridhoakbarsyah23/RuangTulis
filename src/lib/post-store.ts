@@ -1,7 +1,8 @@
 import "server-only";
 
-import { mkdir, readFile, writeFile } from "node:fs/promises";
-import path from "node:path";
+import postsSeed from "@/data/posts.json";
+import { getAdminUsername } from "@/lib/auth";
+import { prisma } from "@/lib/db";
 
 export type PostStatus = "DRAFT" | "PUBLISHED";
 
@@ -31,7 +32,22 @@ export type NewPostInput = {
 
 export type UpdatePostInput = NewPostInput;
 
-const postsFilePath = path.join(process.cwd(), "src", "data", "posts.json");
+type StoredPost = {
+  slug: string;
+  title: string;
+  excerpt: string;
+  content: string;
+  coverImage: string | null;
+  status: "DRAFT" | "PUBLISHED" | "ARCHIVED";
+  readMinutes: number;
+  views: number;
+  featured: boolean;
+  publishedAt: Date | null;
+  createdAt: Date;
+  author: { name: string };
+  category: { name: string } | null;
+};
+
 const defaultCover =
   "https://images.unsplash.com/photo-1516321318423-f06f85e504b3?auto=format&fit=crop&w=1400&q=80";
 const allowedCoverHosts = new Set([
@@ -42,145 +58,188 @@ const allowedCoverHosts = new Set([
   "encrypted-tbn3.gstatic.com",
 ]);
 
+const postIncludes = {
+  author: { select: { name: true } },
+  category: { select: { name: true } },
+} as const;
+
+let seedPromise: Promise<void> | null = null;
+
 export async function getPosts() {
-  const file = await readFile(postsFilePath, "utf8");
-  return JSON.parse(file) as Post[];
+  await seedPostsIfNeeded();
+
+  const posts = await prisma.post.findMany({
+    include: postIncludes,
+    orderBy: [{ createdAt: "desc" }],
+  });
+
+  return posts
+    .filter((post) => post.status === "DRAFT" || post.status === "PUBLISHED")
+    .map(mapPost);
 }
 
 export async function getPublishedPosts() {
-  const posts = await getPosts();
-  return posts.filter((post) => post.status === "PUBLISHED");
+  await seedPostsIfNeeded();
+
+  const posts = await prisma.post.findMany({
+    where: { status: "PUBLISHED" },
+    include: postIncludes,
+    orderBy: [{ publishedAt: "desc" }, { createdAt: "desc" }],
+  });
+
+  return posts.map(mapPost);
 }
 
 export async function getFeaturedPost() {
-  const posts = await getPublishedPosts();
-  return posts.find((post) => post.featured) ?? posts[0];
+  await seedPostsIfNeeded();
+
+  const post =
+    (await prisma.post.findFirst({
+      where: { status: "PUBLISHED", featured: true },
+      include: postIncludes,
+      orderBy: [{ publishedAt: "desc" }, { createdAt: "desc" }],
+    })) ??
+    (await prisma.post.findFirst({
+      where: { status: "PUBLISHED" },
+      include: postIncludes,
+      orderBy: [{ publishedAt: "desc" }, { createdAt: "desc" }],
+    }));
+
+  return post ? mapPost(post) : undefined;
 }
 
 export async function getPostBySlug(slug: string) {
-  const posts = await getPublishedPosts();
-  return posts.find((post) => post.slug === slug);
+  await seedPostsIfNeeded();
+
+  const post = await prisma.post.findFirst({
+    where: { slug, status: "PUBLISHED" },
+    include: postIncludes,
+  });
+
+  return post ? mapPost(post) : undefined;
 }
 
 export async function getAnyPostBySlug(slug: string) {
-  const posts = await getPosts();
-  return posts.find((post) => post.slug === slug);
+  await seedPostsIfNeeded();
+
+  const post = await prisma.post.findUnique({
+    where: { slug },
+    include: postIncludes,
+  });
+
+  return post && (post.status === "DRAFT" || post.status === "PUBLISHED")
+    ? mapPost(post)
+    : undefined;
 }
 
 export async function createPost(input: NewPostInput) {
-  const posts = await getPosts();
-  const slug = createUniqueSlug(input.title, posts);
-  const content = input.content
-    .split(/\r?\n/)
-    .map((paragraph) => paragraph.trim())
-    .filter(Boolean);
+  await seedPostsIfNeeded();
 
-  const post: Post = {
-    slug,
-    title: input.title.trim(),
-    excerpt: input.excerpt.trim(),
-    content,
-    category: input.category.trim() || "General",
-    author: "superadmin",
-    readTime: calculateReadTime(content),
-    publishedAt:
-      input.status === "PUBLISHED" ? formatPublishedDate() : "Draft",
-    cover: normalizeCoverUrl(input.cover),
-    views: 0,
-    status: input.status,
-  };
+  const existingPosts = await prisma.post.findMany({ select: { slug: true } });
+  const slug = createUniqueSlug(
+    input.title,
+    existingPosts.map((post) => post.slug),
+  );
+  const content = splitContent(input.content);
+  const author = await getOrCreateAdminUser();
+  const category = await getOrCreateCategory(input.category);
 
-  await mkdir(path.dirname(postsFilePath), { recursive: true });
-  await writeFile(postsFilePath, JSON.stringify([post, ...posts], null, 2));
+  const post = await prisma.post.create({
+    data: {
+      slug,
+      title: input.title.trim(),
+      excerpt: input.excerpt.trim(),
+      content: content.join("\n\n"),
+      coverImage: normalizeCoverUrl(input.cover),
+      status: input.status,
+      readMinutes: calculateReadMinutes(content),
+      publishedAt: input.status === "PUBLISHED" ? new Date() : null,
+      views: 0,
+      authorId: author.id,
+      categoryId: category.id,
+    },
+    include: postIncludes,
+  });
 
-  return post;
+  return mapPost(post);
 }
 
 export async function updatePostStatus(slug: string, status: PostStatus) {
-  const posts = await getPosts();
-  const nextPosts = posts.map((post) => {
-    if (post.slug !== slug) {
-      return post;
-    }
-
-    return {
-      ...post,
-      status,
-      publishedAt:
-        status === "PUBLISHED" && post.publishedAt === "Draft"
-          ? formatPublishedDate()
-          : post.publishedAt,
-    };
+  const currentPost = await prisma.post.findUnique({
+    where: { slug },
+    select: { publishedAt: true },
   });
 
-  await writePosts(nextPosts);
+  if (!currentPost) {
+    return;
+  }
+
+  await prisma.post.update({
+    where: { slug },
+    data: {
+      status,
+      publishedAt:
+        status === "PUBLISHED" ? (currentPost.publishedAt ?? new Date()) : null,
+    },
+  });
 }
 
 export async function updatePost(slug: string, input: UpdatePostInput) {
-  const posts = await getPosts();
-  const currentPost = posts.find((post) => post.slug === slug);
+  const currentPost = await prisma.post.findUnique({
+    where: { slug },
+    select: { publishedAt: true },
+  });
 
   if (!currentPost) {
     return null;
   }
 
-  const content = input.content
-    .split(/\r?\n/)
-    .map((paragraph) => paragraph.trim())
-    .filter(Boolean);
-
-  const nextPosts = posts.map((post) => {
-    if (post.slug !== slug) {
-      return post;
-    }
-
-    return {
-      ...post,
+  const content = splitContent(input.content);
+  const category = await getOrCreateCategory(input.category);
+  const post = await prisma.post.update({
+    where: { slug },
+    data: {
       title: input.title.trim(),
       excerpt: input.excerpt.trim(),
-      content,
-      category: input.category.trim() || "General",
-      cover: normalizeCoverUrl(input.cover),
+      content: content.join("\n\n"),
+      categoryId: category.id,
+      coverImage: normalizeCoverUrl(input.cover),
       status: input.status,
-      readTime: calculateReadTime(content),
+      readMinutes: calculateReadMinutes(content),
       publishedAt:
-        input.status === "PUBLISHED" && post.publishedAt === "Draft"
-          ? formatPublishedDate()
-          : input.status === "DRAFT"
-            ? "Draft"
-            : post.publishedAt,
-    };
+        input.status === "PUBLISHED"
+          ? (currentPost.publishedAt ?? new Date())
+          : null,
+    },
+    include: postIncludes,
   });
 
-  await writePosts(nextPosts);
-  return nextPosts.find((post) => post.slug === slug) ?? null;
+  return mapPost(post);
 }
 
 export async function incrementPostViews(slug: string) {
-  const posts = await getPosts();
-  const postIndex = posts.findIndex(
-    (post) => post.slug === slug && post.status === "PUBLISHED",
-  );
+  await seedPostsIfNeeded();
 
-  if (postIndex === -1) {
+  const currentPost = await prisma.post.findFirst({
+    where: { slug, status: "PUBLISHED" },
+    select: { id: true },
+  });
+
+  if (!currentPost) {
     return null;
   }
 
-  const updatedPost = {
-    ...posts[postIndex],
-    views: (posts[postIndex].views ?? 0) + 1,
-  };
-  const nextPosts = [...posts];
-  nextPosts[postIndex] = updatedPost;
+  const post = await prisma.post.update({
+    where: { id: currentPost.id },
+    data: { views: { increment: 1 } },
+    include: postIncludes,
+  });
 
-  await writePosts(nextPosts);
-
-  return updatedPost;
+  return mapPost(post);
 }
 
 export async function deletePost(slug: string) {
-  const posts = await getPosts();
-  await writePosts(posts.filter((post) => post.slug !== slug));
+  await prisma.post.delete({ where: { slug } });
 }
 
 export function getTotalViews(posts: Post[]) {
@@ -194,12 +253,100 @@ export function formatViews(views: number) {
   }).format(views);
 }
 
-function createUniqueSlug(title: string, posts: Post[]) {
+async function seedPostsIfNeeded() {
+  seedPromise ??= seedPosts();
+
+  try {
+    await seedPromise;
+  } catch (error) {
+    seedPromise = null;
+    throw error;
+  }
+}
+
+async function seedPosts() {
+  const postCount = await prisma.post.count();
+
+  if (postCount > 0) {
+    return;
+  }
+
+  const author = await getOrCreateAdminUser();
+
+  for (const seedPost of postsSeed) {
+    const category = await getOrCreateCategory(seedPost.category);
+    const content = Array.isArray(seedPost.content)
+      ? seedPost.content
+      : splitContent(String(seedPost.content));
+    const status = normalizeStatus(seedPost.status);
+
+    await prisma.post.upsert({
+      where: { slug: seedPost.slug },
+      create: {
+        slug: seedPost.slug,
+        title: seedPost.title,
+        excerpt: seedPost.excerpt,
+        content: content.join("\n\n"),
+        coverImage: normalizeCoverUrl(seedPost.cover),
+        status,
+        readMinutes: calculateReadMinutes(content),
+        publishedAt:
+          status === "PUBLISHED" ? parsePublishedDate(seedPost.publishedAt) : null,
+        views: seedPost.views ?? 0,
+        featured: "featured" in seedPost ? Boolean(seedPost.featured) : false,
+        authorId: author.id,
+        categoryId: category.id,
+      },
+      update: {},
+    });
+  }
+}
+
+async function getOrCreateAdminUser() {
+  const username = getAdminUsername();
+  const email = `${username}@ruangtulis.local`;
+
+  return prisma.user.upsert({
+    where: { email },
+    create: { name: username, email, role: "ADMIN" },
+    update: { name: username, role: "ADMIN" },
+  });
+}
+
+async function getOrCreateCategory(categoryName: string) {
+  const name = categoryName.trim() || "General";
+  const slug = slugify(name);
+
+  return prisma.category.upsert({
+    where: { slug },
+    create: { name, slug },
+    update: { name },
+  });
+}
+
+function mapPost(post: StoredPost): Post {
+  return {
+    slug: post.slug,
+    title: post.title,
+    excerpt: post.excerpt,
+    content: splitContent(post.content),
+    category: post.category?.name ?? "General",
+    author: post.author.name,
+    readTime: `${Math.max(1, post.readMinutes)} min read`,
+    publishedAt: post.publishedAt ? formatPublishedDate(post.publishedAt) : "Draft",
+    cover: post.coverImage ?? defaultCover,
+    featured: post.featured,
+    views: post.views,
+    status: post.status === "PUBLISHED" ? "PUBLISHED" : "DRAFT",
+  };
+}
+
+function createUniqueSlug(title: string, existingSlugs: string[]) {
   const baseSlug = slugify(title);
   let slug = baseSlug;
   let counter = 2;
 
-  while (posts.some((post) => post.slug === slug)) {
+  while (existingSlugs.includes(slug)) {
     slug = `${baseSlug}-${counter}`;
     counter += 1;
   }
@@ -218,23 +365,33 @@ function slugify(value: string) {
   );
 }
 
-function calculateReadTime(content: string[]) {
-  const words = content.join(" ").split(/\s+/).filter(Boolean).length;
-  const minutes = Math.max(1, Math.ceil(words / 180));
-  return `${minutes} min read`;
+function splitContent(content: string) {
+  return content
+    .split(/\r?\n/)
+    .map((paragraph) => paragraph.trim())
+    .filter(Boolean);
 }
 
-function formatPublishedDate() {
+function calculateReadMinutes(content: string[]) {
+  const words = content.join(" ").split(/\s+/).filter(Boolean).length;
+  return Math.max(1, Math.ceil(words / 180));
+}
+
+function formatPublishedDate(date: Date) {
   return new Intl.DateTimeFormat("id-ID", {
     day: "2-digit",
     month: "short",
     year: "numeric",
-  }).format(new Date());
+  }).format(date);
 }
 
-async function writePosts(posts: Post[]) {
-  await mkdir(path.dirname(postsFilePath), { recursive: true });
-  await writeFile(postsFilePath, JSON.stringify(posts, null, 2));
+function parsePublishedDate(value: string) {
+  if (value === "Draft") {
+    return null;
+  }
+
+  const parsed = new Date(value);
+  return Number.isNaN(parsed.getTime()) ? new Date() : parsed;
 }
 
 function normalizeCoverUrl(cover?: string) {
@@ -254,4 +411,8 @@ function normalizeCoverUrl(cover?: string) {
   }
 
   return defaultCover;
+}
+
+function normalizeStatus(status: string): PostStatus {
+  return status === "PUBLISHED" ? "PUBLISHED" : "DRAFT";
 }

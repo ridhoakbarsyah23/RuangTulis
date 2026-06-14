@@ -55,6 +55,8 @@ model Post {
   coverImage  String?
   status      PostStatus @default(DRAFT)
   readMinutes Int        @default(3)
+  views       Int        @default(0)
+  featured    Boolean    @default(false)
   authorId    String
   categoryId  String?
   author      User       @relation(fields: [authorId], references: [id], onDelete: Cascade)

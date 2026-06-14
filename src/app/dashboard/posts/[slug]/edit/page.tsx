@@ -64,6 +64,13 @@ export default async function EditPostPage({
           </div>
         ) : null}
 
+        {error === "database-unavailable" ? (
+          <div className="mb-4 rounded-[8px] border border-red-200 bg-red-50 px-4 py-3 text-sm font-medium text-red-700">
+            Database belum siap atau tidak bisa diakses. Pastikan DATABASE_URL
+            sudah diatur di production dan migration Prisma sudah dijalankan.
+          </div>
+        ) : null}
+
         <section className="rounded-[8px] bg-white p-5 shadow-sm ring-1 ring-stone-200">
           <form action={updatePostAction} className="grid gap-4">
             <input type="hidden" name="slug" value={post.slug} />

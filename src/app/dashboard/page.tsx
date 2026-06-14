@@ -2,7 +2,12 @@ import Link from "next/link";
 import { createPostAction } from "@/app/dashboard/actions";
 import { ArticleActions } from "@/app/dashboard/article-actions";
 import { LogoutButton } from "@/app/dashboard/logout-button";
-import { formatViews, getPosts, getTotalViews } from "@/lib/post-store";
+import {
+  formatViews,
+  getPosts,
+  getTotalViews,
+  type Post,
+} from "@/lib/post-store";
 
 const tasks = [
   "Review draft sebelum publish",
@@ -18,7 +23,16 @@ export default async function Dashboard({
   searchParams: Promise<{ error?: string; success?: string }>;
 }) {
   const params = await searchParams;
-  const posts = await getPosts();
+  let posts: Post[] = [];
+  let pageError = params.error;
+
+  try {
+    posts = await getPosts();
+  } catch (error) {
+    console.error("Failed to load dashboard posts", error);
+    pageError = "database-unavailable";
+  }
+
   const publishedPosts = posts.filter((post) => post.status === "PUBLISHED");
   const draftPosts = posts.filter((post) => post.status === "DRAFT");
   const totalViews = getTotalViews(publishedPosts);
@@ -69,7 +83,7 @@ export default async function Dashboard({
           <Metric label="Views" value={formatViews(totalViews)} />
         </div>
 
-        <DashboardAlert error={params.error} success={params.success} />
+        <DashboardAlert error={pageError} success={params.success} />
 
         <div className="mt-6 grid gap-6 lg:grid-cols-[minmax(0,1fr)_340px]">
           <section className="rounded-[8px] bg-white p-5 shadow-sm ring-1 ring-stone-200">
@@ -257,6 +271,15 @@ function DashboardAlert({
     return (
       <div className="mt-4 rounded-[8px] border border-red-200 bg-red-50 px-4 py-3 text-sm font-medium text-red-700">
         Aksi tidak valid. Coba ulangi dari dashboard.
+      </div>
+    );
+  }
+
+  if (error === "database-unavailable") {
+    return (
+      <div className="mt-4 rounded-[8px] border border-red-200 bg-red-50 px-4 py-3 text-sm font-medium text-red-700">
+        Database belum siap atau tidak bisa diakses. Pastikan DATABASE_URL sudah
+        diatur di production dan migration Prisma sudah dijalankan.
       </div>
     );
   }

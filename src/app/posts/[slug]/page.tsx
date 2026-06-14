@@ -4,16 +4,10 @@ import { notFound } from "next/navigation";
 import {
   formatViews,
   getPostBySlug,
-  getPublishedPosts,
   incrementPostViews,
 } from "@/lib/post-store";
 
 export const dynamic = "force-dynamic";
-
-export async function generateStaticParams() {
-  const posts = await getPublishedPosts();
-  return posts.map((post) => ({ slug: post.slug }));
-}
 
 export async function generateMetadata({
   params,

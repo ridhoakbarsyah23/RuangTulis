@@ -9,8 +9,8 @@ RuangTulis is a modern blog app built with Next.js, TypeScript, Tailwind CSS, an
 - Superadmin login gate for dashboard access
 - Custom logout confirmation modal
 - Dashboard for creating draft or published articles
-- Local JSON post storage for fast development
-- Prisma schema prepared for PostgreSQL migration
+- PostgreSQL post storage through Prisma
+- Persistent view counts for published articles
 
 ## Tech Stack
 
@@ -65,14 +65,20 @@ http://localhost:3001/dashboard
 
 ## Database
 
-The current app stores posts in `src/data/posts.json`.
+Posts are stored in PostgreSQL through Prisma. `src/data/posts.json` is only used as the initial seed when the database has no posts yet.
 
-Prisma is already configured for a future PostgreSQL migration. After setting `DATABASE_URL`, use:
+After setting `DATABASE_URL`, prepare the database with:
 
 ```bash
 npm run db:generate
 npm run db:migrate
 npm run db:studio
+```
+
+For production deploys, run migrations with:
+
+```bash
+npm run db:deploy
 ```
 
 ## Quality Checks
@@ -94,3 +100,11 @@ DASHBOARD_ACCESS_KEY="change-this-to-a-long-random-value"
 ```
 
 The build script runs `prisma generate` before `next build`, so the generated Prisma client does not need to be committed.
+
+Before the first production deploy, run `npm run db:deploy` against the production database. Dashboard updates and article views will then persist in PostgreSQL instead of local files.
+
+If you want Vercel to run migrations during deployment, set the Vercel Build Command to:
+
+```bash
+npm run build:production
+```
